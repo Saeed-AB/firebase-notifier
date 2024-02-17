@@ -1,6 +1,6 @@
 import React, { Dispatch, Fragment } from "react";
-import { MethodT } from "../App";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { MethodT } from "../sharedTypes";
 
 type ActionsProps = {
   method: MethodT;
@@ -9,7 +9,7 @@ type ActionsProps = {
   handleSubscribeUnSubscribe: (v: string) => Promise<Response>;
 };
 
-const Actions = (props: ActionsProps) => {
+const SubscribeUnSubscribeActions = (props: ActionsProps) => {
   const { method, setMethod } = props;
   const {
     register,
@@ -22,8 +22,7 @@ const Actions = (props: ActionsProps) => {
     values
   ): Promise<void> => {
     const response = await props.handleSubscribeUnSubscribe(values.topic.trim());
-    const data = await response.json();
-    console.log("data", data);
+    // const data = await response.json();
 
     if (response.status === 200) {
       props.getTopics();
@@ -78,4 +77,4 @@ const Actions = (props: ActionsProps) => {
   );
 };
 
-export default Actions;
+export default SubscribeUnSubscribeActions;

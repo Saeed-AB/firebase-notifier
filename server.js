@@ -44,7 +44,6 @@ app.get("/get_topics", async (req, res) => {
 
 app.put("/topic_methods", async (req, res) => {
   const { token, method, topic } = req.body;
-
   const isTopicExist = getTopicAvailability(topic);
 
   if (isTopicExist && method === "Subscribe") {

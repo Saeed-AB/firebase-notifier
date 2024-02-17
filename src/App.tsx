@@ -1,86 +1,105 @@
 import { useEffect, useState } from "react";
 import { initializeFirebaseApp } from "./firebase";
-import { Stores, addData, deleteData, getStoreData, initDB } from "./lib/db";
-import Actions from "./components/Actions";
+import { addData, deleteData, getTokenFromDb, initDB } from "./lib/db";
+import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
+import Loader from "./components/Loader";
+import { FirebaseStatusT, MethodT, Topics, Stores } from "./sharedTypes";
 
-type Topics = {
-  [K: string]: { [K: string]: string };
-};
-
-export type MethodT = "Subscribe" | "UnSubscribe";
+const serverEndpoint = "http://localhost:3000";
 
 function App() {
   const [method, setMethod] = useState<MethodT>("Subscribe");
-  const [token, setToken] = useState("");
   const [search, setSearch] = useState("");
   const [topics, setTopics] = useState<Topics>({});
+  const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT>({
+    status: "pending",
+    token: null,
+  });
 
   const showMessages = (payload: MessageEvent) => {
     console.log("firebase foreground message", payload);
   };
 
   const getTopics = async (t: string) => {
-    const response = await fetch(
-      `http://localhost:3000/get_topics?token=${t}`,
-      {
-        method: "GET",
-      }
-    );
+    const response = await fetch(`${serverEndpoint}/get_topics?token=${t}`, {
+      method: "GET",
+    });
+
     const topics = await response.json();
     setTopics(topics);
   };
 
   const handleSubscribeUnSubscribe = async (topic: string) => {
-    return await fetch(`http://localhost:3000/topic_methods`, {
+    return await fetch(`${serverEndpoint}/topic_methods`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        token,
+        token: firebaseStatus.token,
         method,
         topic,
       }),
     });
   };
 
-  const handleResetToken = async () => {
-    await deleteData(Stores.FirebaseData, token);
+  const handleUpdateToken = async () => {
+    await deleteData(Stores.FirebaseData, firebaseStatus.token ?? "");
     window.location.reload();
   };
 
   const firebaseInitialize = async () => {
     await initDB();
 
-    const data = await getStoreData<{ token: string }>(Stores.FirebaseData);
-    const cachedToken = data?.[0]?.token ?? "";
+    const cachedToken = await getTokenFromDb();
 
     if (cachedToken) {
-      setToken(cachedToken);
+      setFirebaseStatus({
+        status: "success",
+        token: cachedToken,
+      });
       return;
     }
 
     initializeFirebaseApp((t) => {
-      setToken(t);
+      setFirebaseStatus({
+        status: t.token ? "success" : "rejected",
+        token: t.token,
+        errorMessage: t.errorMessage,
+      });
+
       addData(Stores.FirebaseData, { token: t });
     });
   };
 
-  useEffect(() => {
-    if (token) {
-      getTopics(token);
+  const checkFirebaseAvailability = () => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then((notification) => {
+        if (!import.meta.env.REACT_APP_FIREBASE_API_KEY) {
+          setFirebaseStatus({
+            token: null,
+            status: "rejected",
+            errorMessage: "Firebase config is missing in .env file",
+          });
+        } else if (notification === "granted") {
+          firebaseInitialize();
+          navigator.serviceWorker?.addEventListener("message", showMessages);
+        } else {
+          setFirebaseStatus({
+            token: null,
+            status: "rejected",
+            errorMessage: "Notification not granted, Please Enable it",
+          });
+        }
+      });
+    } else {
+      setFirebaseStatus({
+        token: null,
+        status: "rejected",
+        errorMessage: "Your browser doesn't support Notification",
+      });
     }
-  }, [token]);
-
-  useEffect(() => {
-    firebaseInitialize();
-
-    navigator.serviceWorker?.addEventListener("message", showMessages);
-
-    return () => {
-      navigator.serviceWorker?.removeEventListener("message", showMessages);
-    };
-  }, []);
+  };
 
   const getFilteredTopics = (): Topics => {
     if (!search.trim()) return topics;
@@ -88,7 +107,6 @@ function App() {
 
     Object.keys(topics ?? {}).forEach((topicKey) => {
       if (topicKey.includes(search)) {
-
         newTopics = {
           ...newTopics,
           [topicKey]: topics[topicKey],
@@ -99,48 +117,75 @@ function App() {
     return newTopics;
   };
 
+  useEffect(() => {
+    console.log('firebaseStatus', firebaseStatus)
+    if (firebaseStatus.token) {
+      getTopics(firebaseStatus.token);
+    }
+  }, [firebaseStatus.token]);
+
+  useEffect(() => {
+    checkFirebaseAvailability();
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener("message", showMessages);
+    };
+  }, []);
+
   const filteredTopics = getFilteredTopics();
 
   return (
     <div className="flex items-center justify-center">
       <div className="flex flex-col gap-7 w-[500px] bg-[#f1faee] h-fit rounded-lg justify-center items-center  p-4">
         <h1 className="text-center text-xl">Test Firebase messages</h1>
-        <button onClick={handleResetToken} className="btn">
-          Reset Token
-        </button>
-
-        {!!token && (
+        {firebaseStatus.status === "pending" ? (
+          <Loader />
+        ) : (
           <>
-            <Actions
-              method={method}
-              setMethod={setMethod}
-              handleSubscribeUnSubscribe={handleSubscribeUnSubscribe}
-              getTopics={() => getTopics(token)}
-            />
+            <button onClick={handleUpdateToken} className="btn">
+              Update Token
+            </button>
 
-            <input
-              className="input"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search on Topics"
-            />
+            {firebaseStatus.status === "rejected" && (
+              <h1 className="text-center text-xl text-red-500">
+                {firebaseStatus.errorMessage}
+              </h1>
+            )}
 
-            <div className="max-w-[500px] max-h-[300px] overflow-scroll flex flex-col items-center">
-              {Object.keys(filteredTopics ?? {}).map((key) => {
-                return (
-                  <div
-                    key={key}
-                    className="bg-neutral-300 text-center py-2 px-4 mb-2 rounded"
-                  >
-                    {key}
-                  </div>
-                );
-              })}
+            {!!firebaseStatus.token && (
+              <>
+                <SubscribeUnSubscribeActions
+                  method={method}
+                  setMethod={setMethod}
+                  getTopics={() => getTopics(firebaseStatus.token ?? "")}
+                  handleSubscribeUnSubscribe={handleSubscribeUnSubscribe}
+                />
 
-              {!Object.keys(filteredTopics ?? {}).length && (
-                <div className="text-center">No Data</div>
-              )}
-            </div>
+                <input
+                  className="input"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search on Topics"
+                />
+
+                <div className="max-w-[500px] max-h-[300px] overflow-scroll flex flex-col items-center">
+                  {Object.keys(filteredTopics ?? {}).map((key) => {
+                    return (
+                      <div
+                        key={key}
+                        className="bg-neutral-300 text-center py-2 px-4 mb-2 rounded"
+                      >
+                        {key}
+                      </div>
+                    );
+                  })}
+
+                  {!Object.keys(filteredTopics ?? {}).length && (
+                    <div className="text-center">No Data</div>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

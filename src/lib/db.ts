@@ -1,11 +1,10 @@
+import { Stores } from "../sharedTypes";
+
 let request: IDBOpenDBRequest;
 let db: IDBDatabase;
 let version = 1;
 
-const dbName = 'firebase-store'
-export enum Stores {
-  FirebaseData = "firebase",
-}
+const dbName = "firebase-store";
 
 export const initDB = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -17,7 +16,7 @@ export const initDB = (): Promise<boolean> => {
 
       // if the data object store doesn't exist, create it
       if (!db.objectStoreNames.contains(Stores.FirebaseData)) {
-        db.createObjectStore(Stores.FirebaseData, { keyPath: "token", });
+        db.createObjectStore(Stores.FirebaseData, { keyPath: "token" });
       }
       // no need to resolve here
     };
@@ -67,7 +66,7 @@ export const getStoreData = <T>(storeName: Stores): Promise<T[]> => {
 
     request.onsuccess = () => {
       db = request.result;
-      const tx = db.transaction(storeName, 'readonly');
+      const tx = db.transaction(storeName, "readonly");
       const store = tx.objectStore(storeName);
       const res = store.getAll();
       res.onsuccess = () => {
@@ -77,14 +76,17 @@ export const getStoreData = <T>(storeName: Stores): Promise<T[]> => {
   });
 };
 
-export const deleteData = (storeName: string, key: string): Promise<boolean> => {
+export const deleteData = (
+  storeName: string,
+  key: string
+): Promise<boolean> => {
   return new Promise((resolve) => {
     // again open the connection
     request = indexedDB.open(dbName, version);
 
     request.onsuccess = () => {
       db = request.result;
-      const tx = db.transaction(storeName, 'readwrite');
+      const tx = db.transaction(storeName, "readwrite");
       const store = tx.objectStore(storeName);
       const res = store.delete(key);
 
@@ -94,7 +96,12 @@ export const deleteData = (storeName: string, key: string): Promise<boolean> => 
       };
       res.onerror = () => {
         resolve(false);
-      }
+      };
     };
   });
+};
+
+export const getTokenFromDb = async () => {
+  const data = await getStoreData<{ token: string }>(Stores.FirebaseData);
+  return data?.[0]?.token ?? "";
 };
