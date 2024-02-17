@@ -13,13 +13,14 @@ const firebaseConfig = {
   measurementId: import.meta.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 }
 
-export const initializeFirebaseApp = () => {
+export const initializeFirebaseApp = (getFirebaseToken: (t: string) => void) => {
   const app = initializeApp(firebaseConfig);
   const messaging = getMessaging(app);
 
   getToken(messaging, { vapidKey: import.meta.env.REACT_APP_FIREBASE_VAPID_KEY }).then((currentToken) => {
     if (currentToken) {
-      console.log('Token', currentToken)
+      // console.log('Token', currentToken)
+      getFirebaseToken(currentToken)
       // ...
     } else {
       console.log('No registration token available. Request permission to generate one.');

@@ -1,5 +1,7 @@
 # Test Firebase messages
 
+Note: All Process happen on server side 
+
 ## Config firebase
 1) Enable notification on the browser
 2) Create .env file on app root then add firebase keys like this:
@@ -16,7 +18,7 @@ REACT_APP_FIREBASE_DATABASE_URL="Database Url"
 REACT_APP_FIREBASE_MEASUREMENT_ID="Measurement ID"
 ```
 
-3) run the app using this command ```yarn dev```
+3) run the app server & client using these commands ```yarn dev``` & ```yarn dev:server```
 4) After app running open the inspect on console tab and you will see your token
-5) you can then use your token to receive messages/ subscribe to topics
+5) you can then use your token to receive messages, subscribe and unsubscribe  to topics
 6) once receive the notification it will show on the console
