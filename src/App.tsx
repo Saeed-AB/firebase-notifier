@@ -4,12 +4,29 @@ import { addData, deleteData, getTokenFromDb, initDB } from "./lib/db";
 import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
 import Loader from "./components/Loader";
 import { FirebaseStatusT, MethodT, Topics, Stores } from "./sharedTypes";
+import toast, { Toaster } from "react-hot-toast";
+import Modal from "./components/Modal";
 
 const serverEndpoint = "http://localhost:3000";
+
+export const handleToast = (statusCode: number, message: string) => {
+  if (!message) return;
+
+  if (statusCode === 200) {
+    toast.success(message);
+  } else {
+    toast.error(message);
+  }
+};
+
 
 function App() {
   const [method, setMethod] = useState<MethodT>("Subscribe");
   const [search, setSearch] = useState("");
+  const [notificationModal, setNotificationModal] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const [topics, setTopics] = useState<Topics>({});
   const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT>({
     status: "pending",
@@ -17,7 +34,8 @@ function App() {
   });
 
   const showMessages = (payload: MessageEvent) => {
-    console.log("firebase foreground message", payload);
+    console.log("firebase foreground message", payload.data);
+    setNotificationModal(payload?.data ?? {});
   };
 
   const getTopics = async (t: string) => {
@@ -118,7 +136,6 @@ function App() {
   };
 
   useEffect(() => {
-    console.log('firebaseStatus', firebaseStatus)
     if (firebaseStatus.token) {
       getTopics(firebaseStatus.token);
     }
@@ -126,7 +143,6 @@ function App() {
 
   useEffect(() => {
     checkFirebaseAvailability();
-
     return () => {
       navigator.serviceWorker?.removeEventListener("message", showMessages);
     };
@@ -135,61 +151,74 @@ function App() {
   const filteredTopics = getFilteredTopics();
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="flex flex-col gap-7 w-[500px] bg-[#f1faee] h-fit rounded-lg justify-center items-center  p-4">
-        <h1 className="text-center text-xl">Test Firebase messages</h1>
-        {firebaseStatus.status === "pending" ? (
-          <Loader />
-        ) : (
-          <>
-            <button onClick={handleUpdateToken} className="btn">
-              Update Token
-            </button>
+    <>
+      <Toaster />
+      {notificationModal && (
+        <Modal onClose={() => setNotificationModal(null)}>
+          <div className="w-full max-w-[800px]">
+            <pre className="overflow-scroll">
+              {JSON.stringify(notificationModal, null, 2)}
+            </pre>
+          </div>
+        </Modal>
+      )}
 
-            {firebaseStatus.status === "rejected" && (
-              <h1 className="text-center text-xl text-red-500">
-                {firebaseStatus.errorMessage}
-              </h1>
-            )}
+      <div className="flex items-center justify-center w-full h-screen">
+        <div className="flex flex-col gap-7 w-[500px] bg-[#f1faee] h-fit rounded-lg justify-center items-center  p-4">
+          <h1 className="text-center text-xl">Test Firebase messages</h1>
+          {firebaseStatus.status === "pending" ? (
+            <Loader />
+          ) : (
+            <>
+              <button onClick={handleUpdateToken} className="btn">
+                Update Token
+              </button>
 
-            {!!firebaseStatus.token && (
-              <>
-                <SubscribeUnSubscribeActions
-                  method={method}
-                  setMethod={setMethod}
-                  getTopics={() => getTopics(firebaseStatus.token ?? "")}
-                  handleSubscribeUnSubscribe={handleSubscribeUnSubscribe}
-                />
+              {firebaseStatus.status === "rejected" && (
+                <h1 className="text-center text-xl text-red-500">
+                  {firebaseStatus.errorMessage}
+                </h1>
+              )}
 
-                <input
-                  className="input"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search on Topics"
-                />
+              {!!firebaseStatus.token && (
+                <>
+                  <SubscribeUnSubscribeActions
+                    method={method}
+                    setMethod={setMethod}
+                    getTopics={() => getTopics(firebaseStatus.token ?? "")}
+                    handleSubscribeUnSubscribe={handleSubscribeUnSubscribe}
+                  />
 
-                <div className="max-w-[500px] max-h-[300px] overflow-scroll flex flex-col items-center">
-                  {Object.keys(filteredTopics ?? {}).map((key) => {
-                    return (
-                      <div
-                        key={key}
-                        className="bg-neutral-300 text-center py-2 px-4 mb-2 rounded"
-                      >
-                        {key}
-                      </div>
-                    );
-                  })}
+                  <input
+                    className="input"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search on Topics"
+                  />
 
-                  {!Object.keys(filteredTopics ?? {}).length && (
-                    <div className="text-center">No Data</div>
-                  )}
-                </div>
-              </>
-            )}
-          </>
-        )}
+                  <div className="max-h-[300px] w-full overflow-scroll flex flex-col items-center">
+                    {Object.keys(filteredTopics ?? {}).map((key) => {
+                      return (
+                        <div
+                          key={key}
+                          className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded"
+                        >
+                          {key}
+                        </div>
+                      );
+                    })}
+
+                    {!Object.keys(filteredTopics ?? {}).length && (
+                      <div className="text-center">No Data</div>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

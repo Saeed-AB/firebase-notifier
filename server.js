@@ -69,10 +69,19 @@ app.put("/topic_methods", async (req, res) => {
     }
   );
 
+  if (method === "Subscribe") {
+    topics = { ...topics, [topic]: { addDate: "" } };
+  } else {
+    delete topics[topic];
+  }
+
   const data = await response.json();
 
   res.status(response.status === 200 ? 200 : 400).json({
-    message: response.status === 200 ? `Topic ${method} Success` : data?.error ?? `Error On ${method}`,
+    message:
+      response.status === 200
+        ? `Topic ${method} Success`
+        : data?.error ?? `Error On ${method}`,
   });
 });
 

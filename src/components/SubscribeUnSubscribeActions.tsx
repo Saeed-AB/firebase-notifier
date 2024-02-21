@@ -1,6 +1,7 @@
 import React, { Dispatch, Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MethodT } from "../sharedTypes";
+import { handleToast } from "../App";
 
 type ActionsProps = {
   method: MethodT;
@@ -22,7 +23,8 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
     values
   ): Promise<void> => {
     const response = await props.handleSubscribeUnSubscribe(values.topic.trim());
-    // const data = await response.json();
+    const data = await response.json();
+    handleToast(response.status, data.message);
 
     if (response.status === 200) {
       props.getTopics();
@@ -32,7 +34,7 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
 
   return (
     <Fragment>
-      <div className="flex gap-2 text-center">
+      <div className="flex gap-2 text-center w-full">
         <button
           className={`btn ${
             method === "Subscribe" && "!bg-neutral-400 cursor-default"
@@ -51,9 +53,9 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div style={{ display: "flex", gap: 8, height: 40 }}>
-          <div className="flex flex-col">
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+        <div className="flex gap-2 h-10 w-full">
+          <div className="flex flex-col w-full">
             <input
               {...register('topic', {
                 validate: (value) => value.trim() !== '' || 'This field is required',
