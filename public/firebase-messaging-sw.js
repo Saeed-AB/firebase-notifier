@@ -16,8 +16,15 @@ const defaultConfig = {
   appId: true,
 }
 
+const broadcastChannel = new BroadcastChannel('background-message-channel');
+
 const showOSNotification = (payload) => {
   console.log('firebase background notification', payload)
+
+  broadcastChannel.postMessage({
+    type: 'FORWARD_BACKGROUND_MESSAGE',
+    payload: payload,
+  });
 }
 
 const isFirebaseSupported = () =>

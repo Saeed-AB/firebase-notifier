@@ -1,7 +1,7 @@
 import React, { Dispatch, Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MethodT } from "../sharedTypes";
-import { handleToast } from "../App";
+import { showToast } from "../uiHelper";
 
 type ActionsProps = {
   method: MethodT;
@@ -24,7 +24,7 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
   ): Promise<void> => {
     const response = await props.handleSubscribeUnSubscribe(values.topic.trim());
     const data = await response.json();
-    handleToast(response.status, data.message);
+    showToast(response.status, data.message);
 
     if (response.status === 200) {
       props.getTopics();

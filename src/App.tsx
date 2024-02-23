@@ -4,29 +4,24 @@ import { addData, deleteData, getTokenFromDb, initDB } from "./lib/db";
 import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
 import Loader from "./components/Loader";
 import { FirebaseStatusT, MethodT, Topics, Stores } from "./sharedTypes";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import Modal from "./components/Modal";
 
 const serverEndpoint = "http://localhost:3000";
-
-export const handleToast = (statusCode: number, message: string) => {
-  if (!message) return;
-
-  if (statusCode === 200) {
-    toast.success(message);
-  } else {
-    toast.error(message);
-  }
-};
-
+const broadcastChannel = new BroadcastChannel(
+  "background-message-channel"
+);
 
 function App() {
   const [method, setMethod] = useState<MethodT>("Subscribe");
   const [search, setSearch] = useState("");
-  const [notificationModal, setNotificationModal] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [notificationModal, setNotificationModal] = useState<{
+    showModal: boolean;
+    data: Record<string, unknown> | null;
+  }>({
+    showModal: false,
+    data: null,
+  });
   const [topics, setTopics] = useState<Topics>({});
   const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT>({
     status: "pending",
@@ -35,7 +30,10 @@ function App() {
 
   const showMessages = (payload: MessageEvent) => {
     console.log("firebase foreground message", payload.data);
-    setNotificationModal(payload?.data ?? {});
+    setNotificationModal({
+      showModal: true,
+      data: payload?.data,
+    });
   };
 
   const getTopics = async (t: string) => {
@@ -76,6 +74,7 @@ function App() {
         status: "success",
         token: cachedToken,
       });
+
       return;
     }
 
@@ -102,6 +101,14 @@ function App() {
         } else if (notification === "granted") {
           firebaseInitialize();
           navigator.serviceWorker?.addEventListener("message", showMessages);
+          broadcastChannel.addEventListener("message", (event) => {
+            if (
+              event.data &&
+              event.data.type === "FORWARD_BACKGROUND_MESSAGE"
+            ) {
+              showMessages(event);
+            }
+          });
         } else {
           setFirebaseStatus({
             token: null,
@@ -136,7 +143,10 @@ function App() {
   };
 
   useEffect(() => {
-    if (firebaseStatus.token) {
+    if (
+      firebaseStatus.token &&
+      !!import.meta.env.REACT_APP_FIREBASE_SERVER_KEY
+    ) {
       getTopics(firebaseStatus.token);
     }
   }, [firebaseStatus.token]);
@@ -144,6 +154,7 @@ function App() {
   useEffect(() => {
     checkFirebaseAvailability();
     return () => {
+      broadcastChannel.removeEventListener("message", showMessages);
       navigator.serviceWorker?.removeEventListener("message", showMessages);
     };
   }, []);
@@ -153,11 +164,18 @@ function App() {
   return (
     <>
       <Toaster />
-      {notificationModal && (
-        <Modal onClose={() => setNotificationModal(null)}>
+      {notificationModal.showModal && notificationModal.data && (
+        <Modal
+          onClose={() =>
+            setNotificationModal({
+              showModal: false,
+              data: notificationModal.data,
+            })
+          }
+        >
           <div className="w-full max-w-[800px]">
             <pre className="overflow-scroll">
-              {JSON.stringify(notificationModal, null, 2)}
+              {JSON.stringify(notificationModal.data, null, 2)}
             </pre>
           </div>
         </Modal>
@@ -173,6 +191,20 @@ function App() {
               <button onClick={handleUpdateToken} className="btn">
                 Update Token
               </button>
+
+              {!!notificationModal.data && (
+                <button
+                  onClick={() =>
+                    setNotificationModal({
+                      showModal: true,
+                      data: notificationModal.data,
+                    })
+                  }
+                  className="btn"
+                >
+                  Show Recent Notification
+                </button>
+              )}
 
               {firebaseStatus.status === "rejected" && (
                 <h1 className="text-center text-xl text-red-500">
