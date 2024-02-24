@@ -6,11 +6,9 @@ import Loader from "./components/Loader";
 import { FirebaseStatusT, MethodT, Topics, Stores } from "./sharedTypes";
 import { Toaster } from "react-hot-toast";
 import Modal from "./components/Modal";
+import { apiRequest, handleApiError } from "./utils/apiHandler";
 
-const serverEndpoint = "http://localhost:3000";
-const broadcastChannel = new BroadcastChannel(
-  "background-message-channel"
-);
+const broadcastChannel = new BroadcastChannel("background-message-channel");
 
 function App() {
   const [method, setMethod] = useState<MethodT>("Subscribe");
@@ -37,25 +35,30 @@ function App() {
   };
 
   const getTopics = async (t: string) => {
-    const response = await fetch(`${serverEndpoint}/get_topics?token=${t}`, {
-      method: "GET",
-    });
-
-    const topics = await response.json();
-    setTopics(topics);
+    try {
+      const response = await apiRequest<Topics>({
+        method: "GET",
+        url: "get_topics",
+        params: {
+          token: t,
+        },
+      });
+  
+      setTopics(response.data);
+    } catch (e) {
+      handleApiError(e)
+    }
   };
 
   const handleSubscribeUnSubscribe = async (topic: string) => {
-    return await fetch(`${serverEndpoint}/topic_methods`, {
+    return apiRequest<{ message: string }>({
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+      url: "topic_methods",
+      data: {
         token: firebaseStatus.token,
         method,
         topic,
-      }),
+      },
     });
   };
 

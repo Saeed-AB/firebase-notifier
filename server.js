@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import axios from "axios";
 
 const app = express();
 const port = 3000;
@@ -18,6 +19,19 @@ app.get("/", (req, res) => {
 // eslint-disable-next-line no-undef
 const serverKey = process.env.REACT_APP_FIREBASE_SERVER_KEY;
 
+const apiRequestServer = (config) => {
+  const instance = axios.create({
+    baseURL: "/",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `key=${serverKey}`,
+    },
+  });
+
+  return instance(config);
+};
+
 const getTopicAvailability = (topic) => {
   return !!topics[topic];
 };
@@ -25,21 +39,17 @@ const getTopicAvailability = (topic) => {
 app.get("/get_topics", async (req, res) => {
   const token = req.query.token;
 
-  const response = await fetch(
-    `https://iid.googleapis.com/iid/info/${token}?details=true`,
-    {
+  try {
+    const response = await apiRequestServer({
       method: "GET",
-      headers: {
-        Authorization: "key=" + serverKey,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  const data = await response.json();
-  const firebaseTopics = data?.rel?.topics ?? {};
-  topics = firebaseTopics;
-  res.send(firebaseTopics);
+      url: `https://iid.googleapis.com/iid/info/${token}?details=true`,
+    });
+    const firebaseTopics = response.data?.rel?.topics ?? {};
+    topics = firebaseTopics;
+    res.send(firebaseTopics);
+  } catch (e) {
+    res.status(e?.response?.status).json({ message: e?.response?.data?.error ?? 'Something Wrong' });
+  }
 });
 
 app.put("/topic_methods", async (req, res) => {
@@ -47,42 +57,32 @@ app.put("/topic_methods", async (req, res) => {
   const isTopicExist = getTopicAvailability(topic);
 
   if (isTopicExist && method === "Subscribe") {
-    res.status(400).json({ message: "Topic Already Exist" });
+    res.status(422).json({ message: "Topic Already Exist" });
 
     return;
   }
 
   if (!isTopicExist && method === "UnSubscribe") {
-    res.status(400).json({ message: "Topic Not Exist" });
+    res.status(422).json({ message: "Topic Not Exist" });
 
     return;
   }
 
-  const response = await fetch(
-    "https://iid.googleapis.com/iid/v1/" + token + "/rel/topics/" + topic,
-    {
+  try {
+    const response = await apiRequestServer({
       method: method === "Subscribe" ? "POST" : "DELETE",
-      headers: {
-        Authorization: "key=" + serverKey,
-        "Content-Type": "application/json",
-      },
+      url: `https://iid.googleapis.com/iid/v1/${token}/rel/topics/${topic}`,
+    });
+
+    if (method === "Subscribe") {
+      topics = { ...topics, [topic]: { addDate: "" } };
+    } else {
+      delete topics[topic];
     }
-  );
-
-  if (method === "Subscribe") {
-    topics = { ...topics, [topic]: { addDate: "" } };
-  } else {
-    delete topics[topic];
+    res.status(response.status).json({ message: `Topic ${method} Success` });
+  } catch (e) {
+    res.status(e?.response?.status).json({ message: e?.response?.data?.error ?? 'Something Wrong' });
   }
-
-  const data = await response.json();
-
-  res.status(response.status === 200 ? 200 : 400).json({
-    message:
-      response.status === 200
-        ? `Topic ${method} Success`
-        : data?.error ?? `Error On ${method}`,
-  });
 });
 
 app.listen(port, () => {

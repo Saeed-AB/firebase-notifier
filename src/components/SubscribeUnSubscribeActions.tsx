@@ -1,13 +1,17 @@
 import React, { Dispatch, Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MethodT } from "../sharedTypes";
-import { showToast } from "../uiHelper";
+import {  AxiosResponse } from "axios";
+import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiHandler";
 
 type ActionsProps = {
   method: MethodT;
   setMethod: Dispatch<React.SetStateAction<MethodT>>;
   getTopics: () => Promise<void>;
-  handleSubscribeUnSubscribe: (v: string) => Promise<Response>;
+  handleSubscribeUnSubscribe: (
+    v: string
+  ) => Promise<AxiosResponse<{ message: string }>>;
 };
 
 const SubscribeUnSubscribeActions = (props: ActionsProps) => {
@@ -22,13 +26,15 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
   const onSubmit: SubmitHandler<{ topic: string }> = async (
     values
   ): Promise<void> => {
-    const response = await props.handleSubscribeUnSubscribe(values.topic.trim());
-    const data = await response.json();
-    showToast(response.status, data.message);
-
-    if (response.status === 200) {
+    try {
+      const response = await props.handleSubscribeUnSubscribe(
+        values.topic.trim()
+      );
+      toast.success(response.data.message);
       props.getTopics();
       reset();
+    } catch (e) {
+      handleApiError(e);
     }
   };
 
@@ -57,8 +63,9 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
         <div className="flex gap-2 h-10 w-full">
           <div className="flex flex-col w-full">
             <input
-              {...register('topic', {
-                validate: (value) => value.trim() !== '' || 'This field is required',
+              {...register("topic", {
+                validate: (value) =>
+                  value.trim() !== "" || "This field is required",
               })}
               className="input"
               placeholder={`Insert Topic To ${method}`}
