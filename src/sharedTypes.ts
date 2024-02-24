@@ -13,3 +13,8 @@ export type FirebaseStatusT = {
 export enum Stores {
   FirebaseData = "firebase",
 }
+
+export type NotificationStateT = {
+  showModal: boolean;
+  data: Record<string, unknown> | null;
+}

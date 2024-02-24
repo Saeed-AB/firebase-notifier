@@ -3,23 +3,28 @@ import { initializeFirebaseApp } from "./firebase";
 import { addData, deleteData, getTokenFromDb, initDB } from "./lib/db";
 import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
 import Loader from "./components/Loader";
-import { FirebaseStatusT, MethodT, Topics, Stores } from "./sharedTypes";
+import {
+  FirebaseStatusT,
+  MethodT,
+  Topics,
+  Stores,
+  NotificationStateT,
+} from "./sharedTypes";
 import { Toaster } from "react-hot-toast";
-import Modal from "./components/Modal";
 import { apiRequest, handleApiError } from "./utils/apiHandler";
+import PrintFirebaseNotification from "./components/PrintFirebaseNotification";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
+const firebaseServerKey = import.meta.env.REACT_APP_FIREBASE_SERVER_KEY;
 
 function App() {
   const [method, setMethod] = useState<MethodT>("Subscribe");
   const [search, setSearch] = useState("");
-  const [notificationModal, setNotificationModal] = useState<{
-    showModal: boolean;
-    data: Record<string, unknown> | null;
-  }>({
-    showModal: false,
-    data: null,
-  });
+  const [notificationModal, setNotificationModal] =
+    useState<NotificationStateT>({
+      showModal: false,
+      data: null,
+    });
   const [topics, setTopics] = useState<Topics>({});
   const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT>({
     status: "pending",
@@ -43,10 +48,10 @@ function App() {
           token: t,
         },
       });
-  
+
       setTopics(response.data);
     } catch (e) {
-      handleApiError(e)
+      handleApiError(e);
     }
   };
 
@@ -146,10 +151,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (
-      firebaseStatus.token &&
-      !!import.meta.env.REACT_APP_FIREBASE_SERVER_KEY
-    ) {
+    if (firebaseStatus.token && !!firebaseServerKey) {
       getTopics(firebaseStatus.token);
     }
   }, [firebaseStatus.token]);
@@ -167,22 +169,15 @@ function App() {
   return (
     <>
       <Toaster />
-      {notificationModal.showModal && notificationModal.data && (
-        <Modal
-          onClose={() =>
-            setNotificationModal({
-              showModal: false,
-              data: notificationModal.data,
-            })
-          }
-        >
-          <div className="w-full max-w-[800px]">
-            <pre className="overflow-scroll">
-              {JSON.stringify(notificationModal.data, null, 2)}
-            </pre>
-          </div>
-        </Modal>
-      )}
+      <PrintFirebaseNotification
+        notificationModal={notificationModal}
+        onClose={() =>
+          setNotificationModal({
+            showModal: false,
+            data: notificationModal.data,
+          })
+        }
+      />
 
       <div className="flex items-center justify-center w-full h-screen">
         <div className="flex flex-col gap-7 w-[500px] bg-[#f1faee] h-fit rounded-lg justify-center items-center  p-4">
@@ -209,13 +204,14 @@ function App() {
                 </button>
               )}
 
-              {firebaseStatus.status === "rejected" && (
+              {(firebaseStatus.status === "rejected" || !firebaseServerKey) && (
                 <h1 className="text-center text-xl text-red-500">
-                  {firebaseStatus.errorMessage}
+                  {firebaseStatus?.errorMessage ||
+                    "Missing Server Key. You will be able to get Notification messages only"}
                 </h1>
               )}
 
-              {!!firebaseStatus.token && (
+              {!!firebaseStatus.token && !!firebaseServerKey && (
                 <>
                   <SubscribeUnSubscribeActions
                     method={method}
