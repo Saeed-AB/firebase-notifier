@@ -1,16 +1,18 @@
 import axios, { AxiosError, AxiosPromise, AxiosRequestConfig } from "axios";
 import toast from "react-hot-toast";
 
-const serverEndpoint = "http://localhost:3000";
+const serverEndpoint = import.meta.env.REACT_APP_SERVER_URL;
 
 const instance = axios.create({
   baseURL: serverEndpoint,
   headers: { "Content-Type": "application/json", Accept: "application/json" },
 });
 
-export function apiRequest<T>(
-  config: AxiosRequestConfig
-): AxiosPromise<T> {
+export function apiRequest<T>(config: AxiosRequestConfig): AxiosPromise<T> {
+  if (!serverEndpoint) {
+    throw new Error('Server Url Missing')
+  }
+
   return instance(config);
 }
 
