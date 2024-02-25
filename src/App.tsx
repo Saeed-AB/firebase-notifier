@@ -10,9 +10,10 @@ import {
   Stores,
   NotificationStateT,
 } from "./sharedTypes";
-import { Toaster } from "react-hot-toast";
-import { apiRequest, handleApiError } from "./utils/apiHandler";
+import { useQuery } from "@tanstack/react-query";
+
 import PrintFirebaseNotification from "./components/PrintFirebaseNotification";
+import { getTopics } from "./apis";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
 const firebaseServerKey = import.meta.env.REACT_APP_FIREBASE_SERVER_KEY;
@@ -25,10 +26,16 @@ function App() {
       showModal: false,
       data: null,
     });
-  const [topics, setTopics] = useState<Topics>({});
+
   const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT>({
     status: "pending",
     token: null,
+  });
+
+  const topicsQuery = useQuery({
+    queryKey: ["topics"],
+    enabled: !!firebaseStatus.token && !!firebaseServerKey,
+    queryFn: () => getTopics(firebaseStatus.token ?? ""),
   });
 
   const showMessages = (payload: MessageEvent) => {
@@ -36,34 +43,6 @@ function App() {
     setNotificationModal({
       showModal: true,
       data: payload?.data,
-    });
-  };
-
-  const getTopics = async (t: string) => {
-    try {
-      const response = await apiRequest<Topics>({
-        method: "GET",
-        url: "get_topics",
-        params: {
-          token: t,
-        },
-      });
-
-      setTopics(response.data);
-    } catch (e) {
-      handleApiError(e);
-    }
-  };
-
-  const handleSubscribeUnSubscribe = async (topic: string) => {
-    return apiRequest<{ message: string }>({
-      method: "PUT",
-      url: "topic_methods",
-      data: {
-        token: firebaseStatus.token,
-        method,
-        topic,
-      },
     });
   };
 
@@ -129,6 +108,7 @@ function App() {
   };
 
   const getFilteredTopics = (): Topics => {
+    const topics = topicsQuery.data ?? {};
     if (!search.trim()) return topics;
     let newTopics: Topics = {};
 
@@ -143,12 +123,6 @@ function App() {
 
     return newTopics;
   };
-
-  useEffect(() => {
-    if (firebaseStatus.token && !!firebaseServerKey) {
-      getTopics(firebaseStatus.token);
-    }
-  }, [firebaseStatus.token]);
 
   useEffect(() => {
     (async () => {
@@ -179,7 +153,6 @@ function App() {
 
   return (
     <>
-      <Toaster />
       <PrintFirebaseNotification
         notificationModal={notificationModal}
         onClose={() =>
@@ -226,9 +199,8 @@ function App() {
                 <>
                   <SubscribeUnSubscribeActions
                     method={method}
+                    token={firebaseStatus.token}
                     setMethod={setMethod}
-                    getTopics={() => getTopics(firebaseStatus.token ?? "")}
-                    handleSubscribeUnSubscribe={handleSubscribeUnSubscribe}
                   />
 
                   <input
@@ -238,22 +210,26 @@ function App() {
                     placeholder="Search on Topics"
                   />
 
-                  <div className="max-h-[300px] w-full overflow-scroll flex flex-col items-center">
-                    {Object.keys(filteredTopics ?? {}).map((key) => {
-                      return (
-                        <div
-                          key={key}
-                          className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded"
-                        >
-                          {key}
-                        </div>
-                      );
-                    })}
+                  {(topicsQuery.isPending || topicsQuery.isRefetching) ? (
+                    "loading..."
+                  ) : (
+                    <div className="max-h-[300px] w-full overflow-scroll flex flex-col items-center">
+                      {Object.keys(filteredTopics ?? {}).map((key) => {
+                        return (
+                          <div
+                            key={key}
+                            className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded"
+                          >
+                            {key}
+                          </div>
+                        );
+                      })}
 
-                    {!Object.keys(filteredTopics ?? {}).length && (
-                      <div className="text-center">No Data</div>
-                    )}
-                  </div>
+                      {!Object.keys(filteredTopics ?? {}).length && (
+                        <div className="text-center">No Data</div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </>

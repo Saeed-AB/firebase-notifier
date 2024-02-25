@@ -1,41 +1,46 @@
 import React, { Dispatch, Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MethodT } from "../sharedTypes";
-import {  AxiosResponse } from "axios";
 import toast from "react-hot-toast";
 import { handleApiError } from "../utils/apiHandler";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { handleSubscribeUnSubscribe } from "../apis";
 
 type ActionsProps = {
+  token: string;
   method: MethodT;
   setMethod: Dispatch<React.SetStateAction<MethodT>>;
-  getTopics: () => Promise<void>;
-  handleSubscribeUnSubscribe: (
-    v: string
-  ) => Promise<AxiosResponse<{ message: string }>>;
 };
 
 const SubscribeUnSubscribeActions = (props: ActionsProps) => {
-  const { method, setMethod } = props;
+  const { method, token, setMethod } = props;
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
   } = useForm<{ topic: string }>();
+  const queryClient = useQueryClient();
+  const subscribeMutation = useMutation({
+    mutationFn: handleSubscribeUnSubscribe,
+    onSuccess: (response) => {
+      reset();
+      queryClient.invalidateQueries({ queryKey: ["topics"] });
+      toast.success(response.data.message);
+    },
+    onError: (e) => {
+      handleApiError(e);
+    },
+  });
 
   const onSubmit: SubmitHandler<{ topic: string }> = async (
     values
   ): Promise<void> => {
-    try {
-      const response = await props.handleSubscribeUnSubscribe(
-        values.topic.trim()
-      );
-      toast.success(response.data.message);
-      props.getTopics();
-      reset();
-    } catch (e) {
-      handleApiError(e);
-    }
+    subscribeMutation.mutate({
+      topic: values.topic.trim(),
+      token,
+      method,
+    });
   };
 
   return (
@@ -77,7 +82,11 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
             )}
           </div>
 
-          <button type="submit" className="btn !w-fit">
+          <button
+            type="submit"
+            className="btn !w-fit"
+            disabled={subscribeMutation.isPending}
+          >
             {method}
           </button>
         </div>

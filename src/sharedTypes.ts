@@ -17,4 +17,10 @@ export enum Stores {
 export type NotificationStateT = {
   showModal: boolean;
   data: Record<string, unknown> | null;
-}
+};
+
+export type SubscribeDataT = {
+  token: string;
+  method: string;
+  topic: string;
+};
