@@ -97,40 +97,34 @@ function App() {
     });
   };
 
-  const checkFirebaseAvailability = () => {
-    if ("Notification" in window) {
-      Notification.requestPermission().then((notification) => {
-        if (!import.meta.env.REACT_APP_FIREBASE_API_KEY) {
-          setFirebaseStatus({
-            token: null,
-            status: "rejected",
-            errorMessage: "Firebase config is missing in .env file",
-          });
-        } else if (notification === "granted") {
-          firebaseInitialize();
-          navigator.serviceWorker?.addEventListener("message", showMessages);
-          broadcastChannel.addEventListener("message", (event) => {
-            if (
-              event.data &&
-              event.data.type === "FORWARD_BACKGROUND_MESSAGE"
-            ) {
-              showMessages(event);
-            }
-          });
-        } else {
-          setFirebaseStatus({
-            token: null,
-            status: "rejected",
-            errorMessage: "Notification not granted, Please Enable it",
-          });
-        }
-      });
-    } else {
-      setFirebaseStatus({
+  const checkFirebaseAvailability = async () => {
+    if (!("Notification" in window)) {
+      return {
         token: null,
         status: "rejected",
         errorMessage: "Your browser doesn't support Notification",
-      });
+      } as FirebaseStatusT;
+    }
+
+    if ("Notification" in window) {
+      const notificationPermission = await Notification.requestPermission();
+      if (!import.meta.env.REACT_APP_FIREBASE_API_KEY) {
+        return {
+          token: null,
+          status: "rejected",
+          errorMessage: "Firebase config is missing in .env file",
+        } as FirebaseStatusT;
+      }
+
+      if (notificationPermission !== "granted") {
+        return {
+          token: null,
+          status: "rejected",
+          errorMessage: "Notification not granted, Please Enable it",
+        } as FirebaseStatusT;
+      }
+
+      return;
     }
   };
 
@@ -157,7 +151,24 @@ function App() {
   }, [firebaseStatus.token]);
 
   useEffect(() => {
-    checkFirebaseAvailability();
+    (async () => {
+      const getAvailability = await checkFirebaseAvailability();
+
+      if (getAvailability) {
+        setFirebaseStatus(getAvailability);
+        return;
+      }
+
+      firebaseInitialize();
+
+      navigator.serviceWorker?.addEventListener("message", showMessages);
+      broadcastChannel.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "FORWARD_BACKGROUND_MESSAGE") {
+          showMessages(event);
+        }
+      });
+    })();
+
     return () => {
       broadcastChannel.removeEventListener("message", showMessages);
       navigator.serviceWorker?.removeEventListener("message", showMessages);
