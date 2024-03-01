@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { initializeFirebaseApp } from "./firebase";
-import { addData, deleteData, getTokenFromDb, initDB } from "./lib/db";
+import { addToken, getDBToken, deleteToken } from "./lib/db";
 import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
 import Loader from "./components/Loader";
 import {
   FirebaseStatusT,
   MethodT,
   Topics,
-  Stores,
   NotificationStateT,
 } from "./sharedTypes";
-import { useQuery } from "@tanstack/react-query";
 
 import PrintFirebaseNotification from "./components/PrintFirebaseNotification";
 import { getTopics } from "./apis";
@@ -47,14 +47,12 @@ function App() {
   };
 
   const handleUpdateToken = async () => {
-    await deleteData(Stores.FirebaseData, firebaseStatus.token ?? "");
+    await deleteToken(firebaseStatus.token ?? "");
     window.location.reload();
   };
 
   const firebaseInitialize = async () => {
-    await initDB();
-
-    const cachedToken = await getTokenFromDb();
+    const cachedToken = await getDBToken();
 
     if (cachedToken) {
       setFirebaseStatus({
@@ -72,7 +70,7 @@ function App() {
         errorMessage: t.errorMessage,
       });
 
-      addData(Stores.FirebaseData, { token: t });
+      if (t.token) addToken(t.token);
     });
   };
 
@@ -129,6 +127,7 @@ function App() {
       const getAvailability = await checkFirebaseAvailability();
 
       if (getAvailability) {
+        // not able to show notification
         setFirebaseStatus(getAvailability);
         return;
       }
@@ -210,7 +209,7 @@ function App() {
                     placeholder="Search on Topics"
                   />
 
-                  {(topicsQuery.isPending || topicsQuery.isRefetching) ? (
+                  {topicsQuery.isPending || topicsQuery.isRefetching ? (
                     "loading..."
                   ) : (
                     <div className="max-h-[300px] w-full overflow-scroll flex flex-col items-center">

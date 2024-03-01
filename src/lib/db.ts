@@ -1,107 +1,59 @@
-import { Stores } from "../sharedTypes";
+const storeName = "firebaseStore";
+const storeObjectName = "firebaseDate";
+const openDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(storeName, 1);
 
-let request: IDBOpenDBRequest;
-let db: IDBDatabase;
-let version = 1;
+    request.onerror = () => reject(request.error);
 
-const dbName = "firebase-store";
+    request.onsuccess = () => resolve(request.result);
 
-export const initDB = (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    // open the connection
-    request = indexedDB.open(dbName);
-
-    request.onupgradeneeded = () => {
-      db = request.result;
-
-      // if the data object store doesn't exist, create it
-      if (!db.objectStoreNames.contains(Stores.FirebaseData)) {
-        db.createObjectStore(Stores.FirebaseData, { keyPath: "token" });
-      }
-      // no need to resolve here
-    };
-
-    request.onsuccess = () => {
-      db = request.result;
-      version = db.version;
-      resolve(true);
-    };
-
-    request.onerror = () => {
-      resolve(false);
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      db.createObjectStore(storeObjectName, {
+        keyPath: "token",
+        autoIncrement: true,
+      });
     };
   });
 };
 
-export const addData = <T>(
-  storeName: string,
-  data: T
-): Promise<T | string | null> => {
-  return new Promise((resolve) => {
-    request = indexedDB.open(dbName, version);
+// Get data from the object store
+export const getDBToken = async (): Promise<string | undefined> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([storeObjectName], "readonly");
+    const store = transaction.objectStore(storeObjectName);
+    const request = store.openCursor();
 
-    request.onsuccess = () => {
-      db = request.result;
-      const tx = db.transaction(storeName, "readwrite");
-      const store = tx.objectStore(storeName);
+    request.onerror = () => reject(request.error);
 
-      store.add(data);
-      resolve(data);
-    };
-
-    request.onerror = () => {
-      const error = request.error?.message;
-      if (error) {
-        resolve(error);
-      } else {
-        resolve("Unknown error");
-      }
-    };
+    request.onsuccess = () => resolve(request.result?.value?.token as string);
   });
 };
 
-export const getStoreData = <T>(storeName: Stores): Promise<T[]> => {
-  return new Promise((resolve) => {
-    request = indexedDB.open(dbName);
+// Add data to the object store
+export const addToken = async (token: string): Promise<number> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([storeObjectName], "readwrite");
+    const store = transaction.objectStore(storeObjectName);
+    const request = store.add({ token });
 
-    request.onsuccess = () => {
-      db = request.result;
-      const tx = db.transaction(storeName, "readonly");
-      const store = tx.objectStore(storeName);
-      const res = store.getAll();
-      res.onsuccess = () => {
-        resolve(res.result);
-      };
-    };
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result as number);
   });
 };
 
-export const deleteData = (
-  storeName: string,
-  key: string
-): Promise<boolean> => {
-  return new Promise((resolve) => {
-    // again open the connection
-    request = indexedDB.open(dbName, version);
+// Delete data from the object store
+export const deleteToken = async (token: string): Promise<void> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([storeObjectName], "readwrite");
+    const store = transaction.objectStore(storeObjectName);
+    const request = store.delete(token);
 
-    request.onsuccess = () => {
-      db = request.result;
-      const tx = db.transaction(storeName, "readwrite");
-      const store = tx.objectStore(storeName);
-      const res = store.delete(key);
-
-      // add listeners that will resolve the Promise
-      res.onsuccess = () => {
-        resolve(true);
-      };
-      res.onerror = () => {
-        resolve(false);
-      };
-    };
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
   });
-};
-
-export const getTokenFromDb = async () => {
-  const data = await getStoreData<{ token: string }>(Stores.FirebaseData);
-  return data?.[0]?.token ?? "";
 };
