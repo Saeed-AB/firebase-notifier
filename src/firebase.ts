@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
+import toast from "react-hot-toast";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -14,10 +15,7 @@ const firebaseConfig = {
 };
 
 export const initializeFirebaseApp = (
-  getFirebaseToken: (detail: {
-    token: string | null;
-    errorMessage?: string;
-  }) => void
+  getFirebaseToken: (token: string | null) => void
 ) => {
   const app = initializeApp(firebaseConfig);
   const messaging = getMessaging(app);
@@ -27,23 +25,17 @@ export const initializeFirebaseApp = (
   })
     .then((token) => {
       if (token) {
-        console.log("Token", token);
+        getFirebaseToken(token);
+      } else {
+        const error = "No registration token available";
+        toast.error(error);
+        console.error(error);
       }
-
-      getFirebaseToken({
-        token: token ?? null,
-        errorMessage: !token
-          ? "No registration token available. Request permission to generate one."
-          : undefined,
-      });
     })
     .catch((err) => {
-      getFirebaseToken({
-        token: null,
-        errorMessage: "An error occurred while retrieving token.",
-      });
-
-      console.log("An error occurred while retrieving token. ", err);
-      // ...
+      getFirebaseToken(null);
+      const error = `An error occurred while retrieving token. ${err}`;
+      console.error(error);
+      toast.error(error);
     });
 };

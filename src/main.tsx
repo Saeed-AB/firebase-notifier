@@ -13,7 +13,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
-      <Toaster />
+      <Toaster toastOptions={{ className: "toaster-style" }} />
     </QueryClientProvider>
   </StrictMode>
 );

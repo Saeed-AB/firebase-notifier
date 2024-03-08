@@ -48,7 +48,14 @@ app.get("/get_topics", async (req, res) => {
     topics = firebaseTopics;
     res.send(firebaseTopics);
   } catch (e) {
-    res.status(e?.response?.status).json({ message: e?.response?.data?.error ?? 'Something Wrong' });
+    res
+      .status(e?.response?.status)
+      .json({
+        message:
+          e?.response?.data?.error ??
+          e?.response?.statusText ??
+          "Something Wrong",
+      });
   }
 });
 
@@ -81,7 +88,14 @@ app.put("/topic_methods", async (req, res) => {
     }
     res.status(response.status).json({ message: `Topic ${method} Success` });
   } catch (e) {
-    res.status(e?.response?.status).json({ message: e?.response?.data?.error ?? 'Something Wrong' });
+    res
+      .status(e?.response?.status)
+      .json({
+        message:
+          e?.response?.data?.error ??
+          e?.response?.statusText ??
+          "Something Wrong",
+      });
   }
 });
 

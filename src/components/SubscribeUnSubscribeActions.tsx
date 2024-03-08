@@ -1,19 +1,31 @@
-import React, { Dispatch, Fragment } from "react";
+import { Fragment } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { MethodT } from "../sharedTypes";
 import toast from "react-hot-toast";
 import { handleApiError } from "../utils/apiHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { handleSubscribeUnSubscribe } from "../apis";
+import { confirmationStore } from "../store/firebase";
+import { Button } from "./atoms/Button";
 
 type ActionsProps = {
-  token: string;
   method: MethodT;
-  setMethod: Dispatch<React.SetStateAction<MethodT>>;
+  handleUpdateMethod: (v: MethodT) => void;
 };
 
+const methodsList: { value: MethodT }[] = [
+  {
+    value: "Subscribe",
+  },
+  {
+    value: "UnSubscribe",
+  },
+];
+
 const SubscribeUnSubscribeActions = (props: ActionsProps) => {
-  const { method, token, setMethod } = props;
+  const { method } = props;
+  const { firebaseToken } = confirmationStore((store) => store);
+
   const {
     register,
     handleSubmit,
@@ -36,32 +48,26 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
   const onSubmit: SubmitHandler<{ topic: string }> = async (
     values
   ): Promise<void> => {
-    subscribeMutation.mutate({
-      topic: values.topic.trim(),
-      token,
-      method,
-    });
+    if (firebaseToken) {
+      subscribeMutation.mutate({
+        topic: values.topic.trim(),
+        token: firebaseToken,
+        method,
+      });
+    }
   };
 
   return (
     <Fragment>
       <div className="flex gap-2 text-center w-full">
-        <button
-          className={`btn ${
-            method === "Subscribe" && "!bg-neutral-400 cursor-default"
-          }`}
-          onClick={() => setMethod("Subscribe")}
-        >
-          Subscribe
-        </button>
-        <button
-          className={`btn ${
-            method === "UnSubscribe" && "!bg-neutral-400 cursor-default"
-          }`}
-          onClick={() => setMethod("UnSubscribe")}
-        >
-          UnSubscribe
-        </button>
+        {methodsList.map((item) => (
+          <Button
+            key={item.value}
+            onClick={() => props.handleUpdateMethod(item.value)}
+            label={item.value}
+            isActive={method === item.value}
+          />
+        ))}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full">
@@ -82,13 +88,11 @@ const SubscribeUnSubscribeActions = (props: ActionsProps) => {
             )}
           </div>
 
-          <button
+          <Button
+            fitContent
             type="submit"
-            className="btn !w-fit"
-            disabled={subscribeMutation.isPending}
-          >
-            {method}
-          </button>
+            label={method}
+          />
         </div>
       </form>
     </Fragment>

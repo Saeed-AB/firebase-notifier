@@ -1,134 +1,109 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Fragment, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
+import { Button } from "./components/atoms/Button";
 import { initializeFirebaseApp } from "./firebase";
 import { addToken, getDBToken, deleteToken } from "./lib/db";
 import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
-import Loader from "./components/Loader";
-import {
-  FirebaseStatusT,
-  MethodT,
-  Topics,
-  NotificationStateT,
-} from "./sharedTypes";
-
+import Loader from "./components/atoms/Loader";
+import { FiltersStateT } from "./sharedTypes";
 import PrintFirebaseNotification from "./components/PrintFirebaseNotification";
-import { getTopics } from "./apis";
+import { confirmationStore } from "./store/firebase";
+import TopicsList from "./components/TopicsList";
+import useCopy from "./hooks/useCopy";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
 const firebaseServerKey = import.meta.env.REACT_APP_FIREBASE_SERVER_KEY;
 
 function App() {
-  const [method, setMethod] = useState<MethodT>("Subscribe");
-  const [search, setSearch] = useState("");
-  const [notificationModal, setNotificationModal] =
-    useState<NotificationStateT>({
-      showModal: false,
-      data: null,
-    });
+  const {
+    firebaseToken,
+    onShowNotificationModal,
+    onUpdateLastNotificationMessage,
+    onUpdateToken,
+  } = confirmationStore((store) => store);
+  const { isCopied, onCopy } = useCopy();
 
-  const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT>({
-    status: "pending",
-    token: null,
+  const [filters, setFilters] = useState<FiltersStateT>({
+    method: "Subscribe",
+    search: "",
   });
 
-  const topicsQuery = useQuery({
-    queryKey: ["topics"],
-    enabled: !!firebaseStatus.token && !!firebaseServerKey,
-    queryFn: () => getTopics(firebaseStatus.token ?? ""),
-  });
+  const [isInitializePending, setIsInitializePending] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const showMessages = (payload: MessageEvent) => {
     console.log("firebase foreground message", payload.data);
-    setNotificationModal({
-      showModal: true,
-      data: payload?.data,
-    });
+    onShowNotificationModal(true);
+    onUpdateLastNotificationMessage(payload?.data);
   };
 
   const handleUpdateToken = async () => {
-    await deleteToken(firebaseStatus.token ?? "");
+    await deleteToken(firebaseToken ?? "");
     window.location.reload();
+  };
+
+  const handleUpdateFilters = <Key extends keyof FiltersStateT>(
+    key: Key,
+    value: FiltersStateT[Key]
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   const firebaseInitialize = async () => {
     const cachedToken = await getDBToken();
 
     if (cachedToken) {
-      setFirebaseStatus({
-        status: "success",
-        token: cachedToken,
-      });
-
+      setIsInitializePending(false);
+      onUpdateToken(cachedToken);
       return;
     }
 
     initializeFirebaseApp((t) => {
-      setFirebaseStatus({
-        status: t.token ? "success" : "rejected",
-        token: t.token,
-        errorMessage: t.errorMessage,
-      });
+      setIsInitializePending(false);
 
-      if (t.token) addToken(t.token);
+      if (t) {
+        addToken(t);
+        onUpdateToken(t);
+      }
     });
   };
 
-  const checkFirebaseAvailability = async () => {
+  const getAvailabilityError = async () => {
     if (!("Notification" in window)) {
-      return {
-        token: null,
-        status: "rejected",
-        errorMessage: "Your browser doesn't support Notification",
-      } as FirebaseStatusT;
+      return "Your browser doesn't support Notification";
     }
 
     if ("Notification" in window) {
-      const notificationPermission = await Notification.requestPermission();
       if (!import.meta.env.REACT_APP_FIREBASE_API_KEY) {
-        return {
-          token: null,
-          status: "rejected",
-          errorMessage: "Firebase config is missing in .env file",
-        } as FirebaseStatusT;
+        return "API_KEY is missing in .env file";
       }
+
+      if (!import.meta.env.REACT_APP_FIREBASE_VAPID_KEY) {
+        return "VAPID_KEY is missing in .env file";
+      }
+
+      const notificationPermission = await Notification.requestPermission();
 
       if (notificationPermission !== "granted") {
-        return {
-          token: null,
-          status: "rejected",
-          errorMessage: "Notification not granted, Please Enable it",
-        } as FirebaseStatusT;
+        return "Notification not granted, Please Enable it";
       }
-
-      return;
     }
-  };
-
-  const getFilteredTopics = (): Topics => {
-    const topics = topicsQuery.data ?? {};
-    if (!search.trim()) return topics;
-    let newTopics: Topics = {};
-
-    Object.keys(topics ?? {}).forEach((topicKey) => {
-      if (topicKey.includes(search)) {
-        newTopics = {
-          ...newTopics,
-          [topicKey]: topics[topicKey],
-        };
-      }
-    });
-
-    return newTopics;
   };
 
   useEffect(() => {
     (async () => {
-      const getAvailability = await checkFirebaseAvailability();
+      const firebaseError = await getAvailabilityError();
 
-      if (getAvailability) {
+      if (firebaseError) {
         // not able to show notification
-        setFirebaseStatus(getAvailability);
+        setIsInitializePending(false);
+        setErrorMessage(firebaseError);
+        toast.error(firebaseError);
+        console.error(firebaseError);
         return;
       }
 
@@ -148,94 +123,58 @@ function App() {
     };
   }, []);
 
-  const filteredTopics = getFilteredTopics();
-
   return (
-    <>
-      <PrintFirebaseNotification
-        notificationModal={notificationModal}
-        onClose={() =>
-          setNotificationModal({
-            showModal: false,
-            data: notificationModal.data,
-          })
-        }
-      />
-
+    <Fragment>
       <div className="flex items-center justify-center w-full h-screen">
         <div className="flex flex-col gap-7 w-[500px] bg-[#f1faee] h-fit rounded-lg justify-center items-center  p-4">
           <h1 className="text-center text-xl">Test Firebase messages</h1>
-          {firebaseStatus.status === "pending" ? (
+          {isInitializePending ? (
             <Loader />
           ) : (
-            <>
-              <button onClick={handleUpdateToken} className="btn">
-                Update Token
-              </button>
-
-              {!!notificationModal.data && (
-                <button
-                  onClick={() =>
-                    setNotificationModal({
-                      showModal: true,
-                      data: notificationModal.data,
-                    })
-                  }
-                  className="btn"
-                >
-                  Show Recent Notification
-                </button>
-              )}
-
-              {(firebaseStatus.status === "rejected" || !firebaseServerKey) && (
+            <Fragment>
+              {errorMessage || !firebaseToken ? (
                 <h1 className="text-center text-xl text-red-500">
-                  {firebaseStatus?.errorMessage ||
-                    "Missing Server Key. You will be able to get Notification messages only"}
+                  {errorMessage || "No registration token available"}
                 </h1>
-              )}
-
-              {!!firebaseStatus.token && !!firebaseServerKey && (
+              ) : (
                 <>
-                  <SubscribeUnSubscribeActions
-                    method={method}
-                    token={firebaseStatus.token}
-                    setMethod={setMethod}
+                  <Button
+                    disabled={isCopied}
+                    onClick={() => onCopy(firebaseToken ?? "")}
+                    label={isCopied ? "Copied!" : "Copy Token"}
                   />
 
-                  <input
-                    className="input"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search on Topics"
-                  />
+                  <Button onClick={handleUpdateToken} label="Update Token" />
+                  <PrintFirebaseNotification />
 
-                  {topicsQuery.isPending || topicsQuery.isRefetching ? (
-                    "loading..."
-                  ) : (
-                    <div className="max-h-[300px] w-full overflow-scroll flex flex-col items-center">
-                      {Object.keys(filteredTopics ?? {}).map((key) => {
-                        return (
-                          <div
-                            key={key}
-                            className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded"
-                          >
-                            {key}
-                          </div>
-                        );
-                      })}
+                  {!!firebaseServerKey && (
+                    <>
+                      <SubscribeUnSubscribeActions
+                        method={filters.method}
+                        handleUpdateMethod={(newMethod) =>
+                          handleUpdateFilters("method", newMethod)
+                        }
+                      />
 
-                      {!Object.keys(filteredTopics ?? {}).length && (
-                        <div className="text-center">No Data</div>
-                      )}
-                    </div>
+                      <input
+                        className="input"
+                        value={filters.search}
+                        onChange={(e) =>
+                          handleUpdateFilters("search", e.target.value)
+                        }
+                        placeholder="Search on Topics"
+                      />
+
+                      <TopicsList search={filters.search} />
+                    </>
                   )}
                 </>
               )}
-            </>
+            </Fragment>
           )}
         </div>
       </div>
-    </>
+    </Fragment>
   );
 }
 

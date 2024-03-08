@@ -1,24 +1,34 @@
-import Modal from "./Modal";
-import { NotificationStateT } from "../sharedTypes";
+import Modal from "./atoms/Modal";
+import { Fragment } from "react";
+import { confirmationStore } from "../store/firebase";
+import { Button } from "./atoms/Button";
 
-type PrintFirebaseNotificationT = {
-  notificationModal: NotificationStateT;
-  onClose: () => void;
-};
-
-const PrintFirebaseNotification = (props: PrintFirebaseNotificationT) => {
-  const { notificationModal } = props;
-
-  if (!notificationModal.showModal || !notificationModal.data) return null;
+const PrintFirebaseNotification = () => {
+  const {
+    showNotificationModal,
+    lastNotificationMessageData,
+    onShowNotificationModal,
+  } = confirmationStore((store) => store);
 
   return (
-    <Modal onClose={props.onClose}>
-      <div className="w-full max-w-[800px]">
-        <pre className="overflow-scroll">
-          {JSON.stringify(notificationModal.data, null, 2)}
-        </pre>
-      </div>
-    </Modal>
+    <Fragment>
+      {!!lastNotificationMessageData && (
+        <Button
+          label="Show Recent Notification"
+          onClick={() => onShowNotificationModal(true)}
+        />
+      )}
+
+      {showNotificationModal && lastNotificationMessageData && (
+        <Modal onClose={() => onShowNotificationModal(false)}>
+          <div className="w-full max-w-[800px]">
+            <pre className="overflow-scroll">
+              {JSON.stringify(lastNotificationMessageData, null, 2)}
+            </pre>
+          </div>
+        </Modal>
+      )}
+    </Fragment>
   );
 };
 

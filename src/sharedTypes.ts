@@ -4,19 +4,13 @@ export type Topics = {
 
 export type MethodT = "Subscribe" | "UnSubscribe";
 
-export type FirebaseStatusT = {
-  status: "success" | "rejected" | "pending";
-  token: string | null;
-  errorMessage?: string;
-};
-
-export type NotificationStateT = {
-  showModal: boolean;
-  data: Record<string, unknown> | null;
-};
-
 export type SubscribeDataT = {
   token: string;
   method: string;
   topic: string;
 };
+
+export type FiltersStateT = {
+  method: MethodT
+  search: string
+}
