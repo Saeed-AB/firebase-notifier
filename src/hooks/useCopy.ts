@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const useCopy = () => {
+const useCopy = (duration?: number) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const onCopy = async (text: string) => {
@@ -11,7 +11,7 @@ const useCopy = () => {
     const timeout = setTimeout(() => {
       setIsCopied(false);
       clearTimeout(timeout);
-    }, 3000);
+    }, duration ?? 3000);
   };
 
   return {
