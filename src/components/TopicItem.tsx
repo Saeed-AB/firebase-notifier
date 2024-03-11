@@ -1,4 +1,11 @@
-import useCopy from "../hooks/useCopy";
+import { MouseEvent } from "react";
+import useCopy from "@/hooks/useCopy";
+import TrashIcon from "@/assets/icons/trash.svg?react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { handleSubscribeUnSubscribe } from "@/apis";
+import { handleApiError } from "@/utils/apiHandler";
+import toast from "react-hot-toast";
+import { confirmationStore } from "@/store/firebase";
 
 type TopicItemPropsT = {
   label: string;
@@ -7,15 +14,52 @@ type TopicItemPropsT = {
 const TopicItem = (props: TopicItemPropsT) => {
   const { label } = props;
   const { isCopied, onCopy } = useCopy(1000);
+  const queryClient = useQueryClient();
+  const { firebaseToken } = confirmationStore((store) => store);
+
+  const unSubscribeMutation = useMutation({
+    mutationFn: handleSubscribeUnSubscribe,
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["topics"] });
+      toast.success(response.data.message);
+    },
+    onError: (e) => {
+      handleApiError(e);
+    },
+  });
+
+  const onDeleteTopic = (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (firebaseToken) {
+      unSubscribeMutation.mutate({
+        method: "UnSubscribe",
+        token: firebaseToken,
+        topic: label,
+      });
+    }
+  };
 
   return (
     <div
-      className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded text-ellipsis cursor-pointer"
+      className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded text-ellipsis cursor-pointer relative group"
       {...(!isCopied && { onClick: () => onCopy(label) })}
     >
       <span className="line-clamp-1">
-        {isCopied ? "Copied!" : label}
+        {unSubscribeMutation.isPending
+          ? "UnSubscribing on Progress..."
+          : isCopied
+          ? "Copied!"
+          : label}
       </span>
+
+      {!unSubscribeMutation.isPending && (
+        <div
+          className="absolute right-0 top-0 justify-center items-center h-full w-10 bg-neutral-400 hidden group-hover:flex"
+          onClick={onDeleteTopic}
+        >
+          <TrashIcon />
+        </div>
+      )}
     </div>
   );
 };

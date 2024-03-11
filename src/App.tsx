@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-import { Button } from "./components/atoms/Button";
 import { initializeFirebaseApp } from "./firebase";
 import { addToken, getDBToken, deleteToken } from "./lib/db";
 import SubscribeUnSubscribeActions from "./components/SubscribeUnSubscribeActions";
@@ -11,6 +10,7 @@ import PrintFirebaseNotification from "./components/PrintFirebaseNotification";
 import { confirmationStore } from "./store/firebase";
 import TopicsList from "./components/TopicsList";
 import useCopy from "./hooks/useCopy";
+import { Button } from "./components/atoms/Button";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
 const firebaseServerKey = import.meta.env.REACT_APP_FIREBASE_SERVER_KEY;
@@ -25,7 +25,6 @@ function App() {
   const { isCopied, onCopy } = useCopy();
 
   const [filters, setFilters] = useState<FiltersStateT>({
-    method: "Subscribe",
     search: "",
   });
 
@@ -149,12 +148,7 @@ function App() {
 
                   {!!firebaseServerKey && (
                     <>
-                      <SubscribeUnSubscribeActions
-                        method={filters.method}
-                        handleUpdateMethod={(newMethod) =>
-                          handleUpdateFilters("method", newMethod)
-                        }
-                      />
+                      <SubscribeUnSubscribeActions />
 
                       <input
                         className="input"
