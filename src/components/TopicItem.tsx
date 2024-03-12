@@ -42,7 +42,8 @@ const TopicItem = (props: TopicItemPropsT) => {
   return (
     <div
       className="bg-neutral-300 w-full text-center py-2 px-4 mb-2 rounded text-ellipsis cursor-pointer relative group"
-      {...(!isCopied && { onClick: () => onCopy(label) })}
+      {...(!isCopied &&
+        !unSubscribeMutation.isPending && { onClick: () => onCopy(label) })}
     >
       <span className="line-clamp-1">
         {unSubscribeMutation.isPending

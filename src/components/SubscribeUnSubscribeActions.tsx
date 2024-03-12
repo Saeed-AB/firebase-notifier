@@ -1,5 +1,10 @@
 import { Fragment } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import {
+  useForm,
+  SubmitHandler,
+  ValidateResult,
+  useFormState,
+} from "react-hook-form";
 import toast from "react-hot-toast";
 import { handleApiError } from "../utils/apiHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,8 +20,16 @@ const SubscribeUnSubscribeActions = () => {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<{ topic: string }>();
+    control,
+  } = useForm<{ topic: string }>({
+    mode: "onTouched",
+  });
+
   const queryClient = useQueryClient();
+  const { isDirty, isValid } = useFormState({
+    control,
+  });
+
   const subscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
     onSuccess: (response) => {
@@ -29,6 +42,18 @@ const SubscribeUnSubscribeActions = () => {
     },
   });
 
+  const topicValidate = (value: string): ValidateResult => {
+    if (!value || !value.trim()) {
+      return "This field is required";
+    }
+
+    if (value.split(" ").length > 1) {
+      return "topic should not contain more than one word";
+    }
+
+    return undefined;
+  };
+
   const onSubmit: SubmitHandler<{ topic: string }> = async (
     values
   ): Promise<void> => {
@@ -36,7 +61,7 @@ const SubscribeUnSubscribeActions = () => {
       subscribeMutation.mutate({
         topic: values.topic.trim(),
         token: firebaseToken,
-        method: 'Subscribe',
+        method: "Subscribe",
       });
     }
   };
@@ -48,8 +73,7 @@ const SubscribeUnSubscribeActions = () => {
           <div className="flex flex-col w-full">
             <input
               {...register("topic", {
-                validate: (value) =>
-                  value.trim() !== "" || "This field is required",
+                validate: topicValidate,
               })}
               className="input"
               placeholder="Insert Topic To Subscribe"
@@ -61,7 +85,12 @@ const SubscribeUnSubscribeActions = () => {
             )}
           </div>
 
-          <Button fitContent type="submit" label="Subscribe" disabled={subscribeMutation.isPending} />
+          <Button
+            fitContent
+            type="submit"
+            label="Subscribe"
+            disabled={subscribeMutation.isPending || !isDirty || !isValid}
+          />
         </div>
       </form>
     </Fragment>
