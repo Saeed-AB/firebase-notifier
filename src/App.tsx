@@ -13,7 +13,7 @@ import useCopy from "./hooks/useCopy";
 import { Button } from "./components/atoms/Button";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
-const firebaseServerKey = import.meta.env.REACT_APP_FIREBASE_SERVER_KEY;
+const firebaseServerKey = process.env.REACT_APP_FIREBASE_SERVER_KEY;
 
 function App() {
   const {
@@ -77,11 +77,11 @@ function App() {
     }
 
     if ("Notification" in window) {
-      if (!import.meta.env.REACT_APP_FIREBASE_API_KEY) {
+      if (!process.env.REACT_APP_FIREBASE_API_KEY) {
         return "API_KEY is missing in .env file";
       }
 
-      if (!import.meta.env.REACT_APP_FIREBASE_VAPID_KEY) {
+      if (!process.env.REACT_APP_FIREBASE_VAPID_KEY) {
         return "VAPID_KEY is missing in .env file";
       }
 

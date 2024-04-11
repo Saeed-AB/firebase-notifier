@@ -5,18 +5,20 @@
   "type": "module",
   "scripts": {
     "dev:server": "nodemon server.js",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "start": "next start",
+    "build": "next build",
+    "lint": "next lint"
   },
   "dependencies": {
+    "@svgr/webpack": "^8.1.0",
     "@tanstack/react-query": "^5.24.1",
     "axios": "^1.6.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.4",
     "express": "^4.18.2",
     "firebase": "^10.8.0",
+    "next": "^14.1.4",
     "nodemon": "^3.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -29,15 +31,12 @@
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.0",
-    "vite-plugin-svgr": "^4.2.0"
+    "typescript": "^5.2.2"
   }
 }

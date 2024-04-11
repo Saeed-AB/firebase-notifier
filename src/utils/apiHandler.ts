@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosPromise, AxiosRequestConfig } from "axios";
 import toast from "react-hot-toast";
 
-const serverEndpoint = import.meta.env.REACT_APP_SERVER_URL;
+const serverEndpoint = process.env.REACT_APP_SERVER_URL;
 
 const instance = axios.create({
   baseURL: serverEndpoint,

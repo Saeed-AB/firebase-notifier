@@ -1,6 +1,6 @@
 import { MouseEvent } from "react";
 import useCopy from "@/hooks/useCopy";
-import TrashIcon from "@/assets/icons/trash.svg?react";
+import TrashIcon from "@/assets/icons/trash.svg";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { handleSubscribeUnSubscribe } from "@/apis";
 import { handleApiError } from "@/utils/apiHandler";
