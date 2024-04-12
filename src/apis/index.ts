@@ -1,30 +1,26 @@
 import { SubscribeDataT, Topics } from "../sharedTypes";
 import { apiRequest, handleApiError } from "../utils/apiHandler";
 
-export const getTopics = async (t: string) => {
+export const getTopics = async (token: string) => {
   try {
-    const response = await apiRequest<Topics>({
+    const response = await apiRequest<{ rel: { topics: Topics } }>({
       method: "GET",
-      url: "get_topics",
-      params: {
-        token: t,
-      },
+      url: `https://iid.googleapis.com/iid/info/${token}?details=true`,
     });
 
-    return response.data;
+    return response.data?.rel?.topics ?? {};
   } catch (e) {
     handleApiError(e);
   }
 };
 
 export const handleSubscribeUnSubscribe = async (variables: SubscribeDataT) => {
-  return apiRequest<{ message: string }>({
-    method: "PUT",
-    url: "topic_methods",
-    data: {
-      token: variables.token,
+  try {
+    return apiRequest<{ message: string }>({
       method: variables.method,
-      topic: variables.topic,
-    },
-  });
+      url: `https://iid.googleapis.com/iid/v1/${variables.token}/rel/topics/${variables.topic}`,
+    });
+  } catch (e) {
+    handleApiError(e);
+  }
 };

@@ -16,7 +16,7 @@ const TopicsList = (props: TopicsListPropsT) => {
 
   const topicsQuery = useQuery({
     queryKey: ["topics"],
-    enabled: !!firebaseToken && !!process.env.REACT_APP_FIREBASE_SERVER_KEY,
+    enabled: !!firebaseToken && !!process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY,
     queryFn: () => getTopics(firebaseToken ?? ""),
     refetchOnMount: false,
     refetchOnWindowFocus: false,

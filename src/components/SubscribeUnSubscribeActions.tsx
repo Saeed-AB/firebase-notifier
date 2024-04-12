@@ -32,10 +32,10 @@ const SubscribeUnSubscribeActions = () => {
 
   const subscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
-    onSuccess: (response) => {
+    onSuccess: () => {
       reset();
       queryClient.invalidateQueries({ queryKey: ["topics"] });
-      toast.success(response.data.message);
+      toast.success('Topic Subscribe Success');
     },
     onError: (e) => {
       handleApiError(e);
@@ -61,7 +61,7 @@ const SubscribeUnSubscribeActions = () => {
       subscribeMutation.mutate({
         topic: values.topic.trim(),
         token: firebaseToken,
-        method: "Subscribe",
+        method: "POST",
       });
     }
   };

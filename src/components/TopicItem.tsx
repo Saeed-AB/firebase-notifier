@@ -19,9 +19,9 @@ const TopicItem = (props: TopicItemPropsT) => {
 
   const unSubscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["topics"] });
-      toast.success(response.data.message);
+      toast.success("Topic UnSubscribe Success");
     },
     onError: (e) => {
       handleApiError(e);
@@ -32,7 +32,7 @@ const TopicItem = (props: TopicItemPropsT) => {
     e.stopPropagation();
     if (firebaseToken) {
       unSubscribeMutation.mutate({
-        method: "UnSubscribe",
+        method: "DELETE",
         token: firebaseToken,
         topic: label,
       });
