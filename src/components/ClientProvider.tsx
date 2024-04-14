@@ -1,11 +1,19 @@
 "use client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 const queryClient = new QueryClient();
 import { Toaster } from "react-hot-toast";
-// import * as serviceWorkerRegistration from "../serviceWorkerRegistration";
+import * as serviceWorkerRegistration from "../serviceWorkerRegistration";
 
 export function ClientProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    serviceWorkerRegistration.register();
+
+    return () => {
+      serviceWorkerRegistration.unregister();
+    };
+  }, []);
+
   return (
     <Fragment>
       <Toaster toastOptions={{ className: "toaster-style" }} />
@@ -14,5 +22,3 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     </Fragment>
   );
 }
-
-// serviceWorkerRegistration.register()
