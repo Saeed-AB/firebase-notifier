@@ -1,6 +1,7 @@
 import "../globals.css";
 
 import { Metadata } from "next";
+import { ClientProvider } from "@/components/ClientProvider";
 
 export const metadata: Metadata = {
   title: "Firebase Notifier",
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div id="root">{children}</div>
+        <ClientProvider>
+          <div id="root">{children}</div>
+        </ClientProvider>
       </body>
     </html>
   );

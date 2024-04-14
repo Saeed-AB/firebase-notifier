@@ -1,9 +1,9 @@
 import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { confirmationStore } from "../store/firebase";
-import { getTopics } from "../apis";
-import { Topics } from "../sharedTypes";
+import { confirmationStore } from "../../store/firebase";
+import { getTopics } from "../../apis";
+import { Topics } from "../../sharedTypes";
 import TopicItem from "./TopicItem";
 
 type TopicsListPropsT = {

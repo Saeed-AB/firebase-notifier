@@ -1,7 +1,7 @@
 "use client"
-import PrintFirebaseNotification from "@/components/PrintFirebaseNotification";
-import SubscribeUnSubscribeActions from "@/components/SubscribeUnSubscribeActions";
-import TopicsList from "@/components/TopicsList";
+import PrintFirebaseNotification from "@/app/components/PrintFirebaseNotification";
+import SubscribeUnSubscribeActions from "@/app/components/SubscribeUnSubscribeActions";
+import TopicsList from "@/app/components/TopicsList";
 import { Button } from "@/components/atoms/Button";
 import Loader from "@/components/atoms/Loader";
 import { initializeFirebaseApp } from "@/firebase";

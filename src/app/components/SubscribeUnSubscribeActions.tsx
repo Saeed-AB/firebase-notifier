@@ -6,11 +6,11 @@ import {
   useFormState,
 } from "react-hook-form";
 import toast from "react-hot-toast";
-import { handleApiError } from "../utils/apiHandler";
+import { handleApiError } from "../../utils/apiHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { handleSubscribeUnSubscribe } from "../apis";
-import { confirmationStore } from "../store/firebase";
-import { Button } from "./atoms/Button";
+import { handleSubscribeUnSubscribe } from "../../apis";
+import { confirmationStore } from "../../store/firebase";
+import { Button } from "../../components/atoms/Button";
 
 const SubscribeUnSubscribeActions = () => {
   const { firebaseToken } = confirmationStore((store) => store);
