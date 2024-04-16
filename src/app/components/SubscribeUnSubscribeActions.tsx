@@ -1,3 +1,4 @@
+"use client";
 import { Fragment } from "react";
 import {
   useForm,
@@ -35,10 +36,11 @@ const SubscribeUnSubscribeActions = () => {
     onSuccess: () => {
       reset();
       queryClient.invalidateQueries({ queryKey: ["topics"] });
-      toast.success('Topic Subscribe Success');
+      toast.success("Topic Subscribe Success");
     },
     onError: (e) => {
-      handleApiError(e);
+      console.log('e', e)
+      // handleApiError(e);x
     },
   });
 

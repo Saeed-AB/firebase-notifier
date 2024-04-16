@@ -1,3 +1,4 @@
+"use client";
 import Modal from "../../components/atoms/Modal";
 import { Fragment } from "react";
 import { confirmationStore } from "../../store/firebase";
