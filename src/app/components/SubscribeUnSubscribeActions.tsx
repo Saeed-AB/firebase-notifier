@@ -7,7 +7,6 @@ import {
   useFormState,
 } from "react-hook-form";
 import toast from "react-hot-toast";
-import { handleApiError } from "../../utils/apiHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { handleSubscribeUnSubscribe } from "../../apis";
 import { confirmationStore } from "../../store/firebase";
@@ -33,14 +32,14 @@ const SubscribeUnSubscribeActions = () => {
 
   const subscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
-    onSuccess: () => {
-      reset();
-      queryClient.invalidateQueries({ queryKey: ["topics"] });
-      toast.success("Topic Subscribe Success");
-    },
-    onError: (e) => {
-      console.log('e', e)
-      // handleApiError(e);x
+    onSuccess: (res) => {
+      if (res.status === 200) {
+        reset();
+        queryClient.invalidateQueries({ queryKey: ["topics"] });
+        toast.success("Topic Subscribe Success");
+      } else if ('errorMessage' in res) {
+        toast.error(res.errorMessage);
+      }
     },
   });
 

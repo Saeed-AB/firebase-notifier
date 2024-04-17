@@ -4,8 +4,10 @@ import { Button } from "@/components/atoms/Button";
 import useCopy from "@/hooks/useCopy";
 import { confirmationStore } from "@/store/firebase";
 import useFirebaseCacheToken from "@/hooks/useFirebaseCacheToken";
+import { useRouter } from "next/navigation";
 
 const CopyAndReGenerate = () => {
+  const router = useRouter()
   const { deleteToken } = useFirebaseCacheToken();
 
   const { firebaseToken, onUpdateToken } = confirmationStore((store) => store);
@@ -14,8 +16,7 @@ const CopyAndReGenerate = () => {
   const handleDeleteToken = () => {
     deleteToken();
     onUpdateToken(null);
-
-    window.location.reload();
+    router.push('/generate_token')
   };
 
   return (
