@@ -68,10 +68,10 @@ function Home() {
     <Fragment>
       <div className="flex items-center justify-center w-full h-screen">
         <div className="flex flex-col gap-7 w-[500px] bg-[#f1faee] h-fit rounded-lg justify-center items-center  p-4">
-          <h1 className="text-center text-xl">Test Firebase messages</h1>
+          <h1 className="text-center text-xl">Firebase Notifier</h1>
           <CopyAndReGenerate />
           <PrintFirebaseNotification />
-          {!!firebaseServerKey && (
+          {firebaseServerKey ? (
             <>
               <SubscribeUnSubscribeActions />
 
@@ -84,6 +84,10 @@ function Home() {
 
               <TopicsList search={filters.search} />
             </>
+          ) : (
+            <h1 className="text-center text-xl">
+              Note: Server key Required to manage topics
+            </h1>
           )}
         </div>
       </div>

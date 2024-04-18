@@ -21,7 +21,8 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="Measurement ID"
 NEXT_PUBLIC_FIREBASE_SERVER_KEY="Server Key"
 ```
 
-3) run the app server & client using these commands ```yarn dev```
-4) After app running use can copy your token by click copy token button
+3) run the server using this command ```yarn dev```
+4) use generate token button to initialize firebase
+4) After the initializing you can copy your token by click the copy token button
 5) you can then use your token to receive messages, subscribe and unsubscribe  to topics
 6) while receiving notification popup will show with the data and it will print on console 
