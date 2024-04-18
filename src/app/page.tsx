@@ -8,6 +8,7 @@ import { FiltersStateT } from "@/sharedTypes";
 import { confirmationStore } from "@/store/firebase";
 import useFirebaseCacheToken from "@/hooks/useFirebaseCacheToken";
 import { useRouter } from "next/navigation";
+import useFirebaseAvailability from "@/hooks/useFirebaseAvailability";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
 const firebaseServerKey = process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY;
@@ -21,6 +22,7 @@ function Home() {
     onUpdateLastNotificationMessage,
   } = confirmationStore((store) => store);
   const { getToken } = useFirebaseCacheToken();
+  const { isFirebaseAllowed } = useFirebaseAvailability();
 
   const [filters, setFilters] = useState<FiltersStateT>({
     search: "",
@@ -45,7 +47,7 @@ function Home() {
   useEffect(() => {
     const cachedToken = getToken();
 
-    if (cachedToken) {
+    if (cachedToken && isFirebaseAllowed) {
       onUpdateToken(cachedToken);
       navigator.serviceWorker?.addEventListener("message", showMessages);
       broadcastChannel.addEventListener("message", (event) => {
@@ -62,7 +64,7 @@ function Home() {
       broadcastChannel.removeEventListener("message", showMessages);
       navigator.serviceWorker?.removeEventListener("message", showMessages);
     };
-  }, []);
+  }, [isFirebaseAllowed]);
 
   return (
     <Fragment>
