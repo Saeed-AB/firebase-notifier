@@ -1,3 +1,4 @@
+"use client";
 import { Fragment } from "react";
 import {
   useForm,
@@ -6,11 +7,10 @@ import {
   useFormState,
 } from "react-hook-form";
 import toast from "react-hot-toast";
-import { handleApiError } from "../utils/apiHandler";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { handleSubscribeUnSubscribe } from "../apis";
-import { confirmationStore } from "../store/firebase";
-import { Button } from "./atoms/Button";
+import { handleSubscribeUnSubscribe } from "../../apis";
+import { confirmationStore } from "../../store/firebase";
+import { Button } from "../../components/atoms/Button";
 
 const SubscribeUnSubscribeActions = () => {
   const { firebaseToken } = confirmationStore((store) => store);
@@ -32,13 +32,14 @@ const SubscribeUnSubscribeActions = () => {
 
   const subscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
-    onSuccess: (response) => {
-      reset();
-      queryClient.invalidateQueries({ queryKey: ["topics"] });
-      toast.success(response.data.message);
-    },
-    onError: (e) => {
-      handleApiError(e);
+    onSuccess: (res) => {
+      if (res.status === 200) {
+        reset();
+        queryClient.invalidateQueries({ queryKey: ["topics"] });
+        toast.success("Topic Subscribe Success");
+      } else if ('errorMessage' in res) {
+        toast.error(res.errorMessage);
+      }
     },
   });
 
@@ -61,7 +62,7 @@ const SubscribeUnSubscribeActions = () => {
       subscribeMutation.mutate({
         topic: values.topic.trim(),
         token: firebaseToken,
-        method: "Subscribe",
+        method: "POST",
       });
     }
   };

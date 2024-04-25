@@ -4,14 +4,14 @@ import toast from "react-hot-toast";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: import.meta.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.REACT_APP_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: import.meta.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 export const initializeFirebaseApp = (
@@ -21,7 +21,7 @@ export const initializeFirebaseApp = (
   const messaging = getMessaging(app);
 
   getToken(messaging, {
-    vapidKey: import.meta.env.REACT_APP_FIREBASE_VAPID_KEY,
+    vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
   })
     .then((token) => {
       if (token) {

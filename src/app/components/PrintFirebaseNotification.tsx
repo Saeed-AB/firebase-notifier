@@ -1,7 +1,8 @@
-import Modal from "./atoms/Modal";
+"use client";
+import Modal from "../../components/atoms/Modal";
 import { Fragment } from "react";
-import { confirmationStore } from "../store/firebase";
-import { Button } from "./atoms/Button";
+import { confirmationStore } from "../../store/firebase";
+import { Button } from "../../components/atoms/Button";
 
 const PrintFirebaseNotification = () => {
   const {

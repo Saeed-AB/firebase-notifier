@@ -28,7 +28,7 @@ body {
     @apply bg-neutral-500 cursor-default text-neutral-50;
   }
 
-  .btn.btn[data-fitContent="true"] {
+  .btn.btn[data-fitcontent="true"] {
     @apply w-fit;
   }
 

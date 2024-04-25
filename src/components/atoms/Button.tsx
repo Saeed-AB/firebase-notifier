@@ -18,7 +18,7 @@ export const Button = (props: ButtonPropsT) => {
       className="btn"
       {...rest}
       data-active={isActive}
-      data-fitContent={fitContent}
+      data-fitcontent={fitContent}
     >
       {label}
     </button>

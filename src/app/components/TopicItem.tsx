@@ -1,9 +1,8 @@
 import { MouseEvent } from "react";
 import useCopy from "@/hooks/useCopy";
-import TrashIcon from "@/assets/icons/trash.svg?react";
+import TrashIcon from "@/assets/icons/trash.svg";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { handleSubscribeUnSubscribe } from "@/apis";
-import { handleApiError } from "@/utils/apiHandler";
 import toast from "react-hot-toast";
 import { confirmationStore } from "@/store/firebase";
 
@@ -19,12 +18,13 @@ const TopicItem = (props: TopicItemPropsT) => {
 
   const unSubscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["topics"] });
-      toast.success(response.data.message);
-    },
-    onError: (e) => {
-      handleApiError(e);
+    onSuccess: (res) => {
+      if (res.status === 200) {
+        queryClient.invalidateQueries({ queryKey: ["topics"] });
+        toast.success("Topic UnSubscribe Success");
+      } else if ("errorMessage" in res) {
+        toast.error(res.errorMessage);
+      }
     },
   });
 
@@ -32,7 +32,7 @@ const TopicItem = (props: TopicItemPropsT) => {
     e.stopPropagation();
     if (firebaseToken) {
       unSubscribeMutation.mutate({
-        method: "UnSubscribe",
+        method: "DELETE",
         token: firebaseToken,
         topic: label,
       });
