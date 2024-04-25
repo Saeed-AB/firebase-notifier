@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 
-type FirebaseStatusT = { type: "success" | "error"; message: string };
+export type FirebaseStatusT = "success" | 'warning' | "error"
+type FirebaseItemT = { type: FirebaseStatusT; message: string };
 
 const useFirebaseAvailability = () => {
-  const [firebaseStatus, setFirebaseStatus] = useState<FirebaseStatusT[]>([]);
+  const [firebaseStatus, setFirebaseStatus] = useState<FirebaseItemT[]>([]);
 
   const isFirebaseAllowed = !firebaseStatus.find(
     (item) => item.type === "error"
@@ -18,18 +19,22 @@ const useFirebaseAvailability = () => {
         message: "Browser support Notification",
       },
       {
+        type: notificationPermission === "granted" ? "success" : "error",
+        message: "Notification permission granted",
+      },
+      {
         type: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? "success" : "error",
         message: "Firebase API_KEY",
       },
       {
         type: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ? "success" : "error",
-        message: "VAPID_KEY API_KEY",
+        message: "Firebase VAPID_KEY",
       },
       {
-        type: notificationPermission === "granted" ? "success" : "error",
-        message: "Notification permission granted",
+        type: process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY ? "success" : "warning",
+        message: "Firebase SERVER_KEY",
       },
-    ] as FirebaseStatusT[];
+    ] as FirebaseItemT[];
   };
 
   useEffect(() => {
