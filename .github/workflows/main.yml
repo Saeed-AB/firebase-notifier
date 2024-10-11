@@ -1,0 +1,13 @@
+name: Testing GitHub Actions
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  build-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: build app
+        run: yarn build
