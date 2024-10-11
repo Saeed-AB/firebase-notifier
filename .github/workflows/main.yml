@@ -5,9 +5,38 @@ on:
     branches: ["master"]
 
 jobs:
-  build-app:
+  install-packages:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Cache Yarn dependencies
+        id: cache-yarn-deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/yarn
+            node_modules
+          key: ${{ runner.os }}-yarn-node-modules-${{ hashFiles('yarn.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-node-modules-
+      - name: install packages
+        run: yarn install
+  build-app:
+    needs: [install-packages]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Restore Yarn cache from build job
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/yarn
+            node_modules
+          key: ${{ runner.os }}-yarn-node-modules-${{ hashFiles('yarn.lock', 'package.json') }}
       - name: build app
         run: yarn build
+        
