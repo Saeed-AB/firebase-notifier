@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/.cache/yarn
+            yarn.lock
             node_modules
           key: ${{ runner.os }}-yarn-node-modules-${{ hashFiles('yarn.lock', 'package.json') }}
       - name: build app
