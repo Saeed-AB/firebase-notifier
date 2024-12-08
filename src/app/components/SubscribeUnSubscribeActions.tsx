@@ -32,13 +32,14 @@ const SubscribeUnSubscribeActions = () => {
 
   const subscribeMutation = useMutation({
     mutationFn: handleSubscribeUnSubscribe,
+    onError: () => {
+      // toast.error(error.response.data.error);
+    },
     onSuccess: (res) => {
       if (res.status === 200) {
         reset();
         queryClient.invalidateQueries({ queryKey: ["topics"] });
         toast.success("Topic Subscribe Success");
-      } else if ('errorMessage' in res) {
-        toast.error(res.errorMessage);
       }
     },
   });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type FirebaseStatusT = "success" | 'warning' | "error"
+export type FirebaseStatusT = "success" | "warning" | "error";
 type FirebaseItemT = { type: FirebaseStatusT; message: string };
 
 const useFirebaseAvailability = () => {
@@ -31,8 +31,11 @@ const useFirebaseAvailability = () => {
         message: "Firebase VAPID_KEY",
       },
       {
-        type: process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY ? "success" : "warning",
-        message: "Firebase SERVER_KEY",
+        // type: process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY
+        //   ? "success"
+        //   : "warning",
+        type: "warning",
+        message: "Service Account File",
       },
     ] as FirebaseItemT[];
   };

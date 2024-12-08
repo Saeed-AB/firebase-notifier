@@ -9,9 +9,10 @@ import { confirmationStore } from "@/store/firebase";
 import useFirebaseCacheToken from "@/hooks/useFirebaseCacheToken";
 import { useRouter } from "next/navigation";
 import useFirebaseAvailability from "@/hooks/useFirebaseAvailability";
+import { Button } from "@/components/atoms/Button";
+import useGetAuth2Token from "@/hooks/useGetAuth2Token";
 
 const broadcastChannel = new BroadcastChannel("background-message-channel");
-const firebaseServerKey = process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY;
 
 function Home() {
   const router = useRouter();
@@ -21,7 +22,13 @@ function Home() {
     onShowNotificationModal,
     onUpdateLastNotificationMessage,
   } = confirmationStore((store) => store);
-  const { getToken } = useFirebaseCacheToken();
+
+  const { getToken, getAuth2Token } = useFirebaseCacheToken();
+  const { getAuth, isAuth2Initializing } = useGetAuth2Token({
+    callback: () => window.location.reload(),
+  });
+
+  const isAuthInitialized = getAuth2Token();
   const { isFirebaseAllowed } = useFirebaseAvailability();
 
   const [filters, setFilters] = useState<FiltersStateT>({
@@ -73,7 +80,14 @@ function Home() {
           <h1 className="text-center text-xl">Firebase Notifier</h1>
           <CopyAndReGenerate />
           <PrintFirebaseNotification />
-          {firebaseServerKey ? (
+
+          <Button
+            label="Refresh Auth 2 Token"
+            onClick={getAuth}
+            disabled={isAuth2Initializing}
+          />
+
+          {isAuthInitialized ? (
             <>
               <SubscribeUnSubscribeActions />
 
@@ -88,7 +102,7 @@ function Home() {
             </>
           ) : (
             <h1 className="text-center text-xl">
-              Note: Server key Required to manage topics
+              Note: Service Account File required for manage topic
             </h1>
           )}
         </div>

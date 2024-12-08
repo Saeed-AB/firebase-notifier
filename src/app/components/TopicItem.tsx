@@ -22,8 +22,6 @@ const TopicItem = (props: TopicItemPropsT) => {
       if (res.status === 200) {
         queryClient.invalidateQueries({ queryKey: ["topics"] });
         toast.success("Topic UnSubscribe Success");
-      } else if ("errorMessage" in res) {
-        toast.error(res.errorMessage);
       }
     },
   });

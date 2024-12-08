@@ -12,6 +12,7 @@ import useFirebaseCacheToken from "@/hooks/useFirebaseCacheToken";
 import useFirebaseAvailability, {
   FirebaseStatusT,
 } from "@/hooks/useFirebaseAvailability";
+import useGetAuth2Token from "@/hooks/useGetAuth2Token";
 
 const firebaseStatusIcons: Record<FirebaseStatusT, FC> = {
   warning: QuestionMarkCircleIcon,
@@ -23,6 +24,7 @@ const Page = () => {
   const router = useRouter();
   const { onUpdateToken } = confirmationStore((store) => store);
   const { setToken } = useFirebaseCacheToken();
+  const { getAuth, isAuth2Initializing } = useGetAuth2Token();
   const { isFirebaseAllowed, firebaseStatus } = useFirebaseAvailability();
   const [isInitializePending, setIsInitializePending] = useState(false);
 
@@ -58,8 +60,16 @@ const Page = () => {
           })}
         </div>
         <Button
+          label="Generate Auth 2 Token"
+          disabled={isInitializePending || isAuth2Initializing}
+          onClick={getAuth}
+        />
+
+        <Button
           label="Generate Token"
-          disabled={!isFirebaseAllowed || isInitializePending}
+          disabled={
+            !isFirebaseAllowed || isInitializePending || isAuth2Initializing
+          }
           onClick={generateFirebaseToken}
         />
       </div>

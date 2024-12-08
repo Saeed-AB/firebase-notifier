@@ -1,5 +1,4 @@
 import "../globals.css";
-
 import { Metadata } from "next";
 import { ClientProvider } from "@/components/ClientProvider";
 

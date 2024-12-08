@@ -1,13 +1,12 @@
 import axios, { AxiosError, AxiosPromise, AxiosRequestConfig } from "axios";
 import toast from "react-hot-toast";
 
-const serverKey = process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY;
+
 const instance = axios.create({
   baseURL: "/",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Authorization: `key=${serverKey}`,
   },
 });
 

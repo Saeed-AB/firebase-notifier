@@ -14,16 +14,20 @@ const TopicsList = (props: TopicsListPropsT) => {
   const { search } = props;
   const { firebaseToken } = confirmationStore((store) => store);
 
-  const topicsQuery = useQuery({
+  const {
+    data: topics = {},
+    isPending,
+    error,
+  } = useQuery({
     queryKey: ["topics"],
-    enabled: !!firebaseToken && !!process.env.NEXT_PUBLIC_FIREBASE_SERVER_KEY,
+    enabled: !!firebaseToken,
     queryFn: () => getTopics(firebaseToken ?? ""),
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    select: (data) => data.data.topics,
   });
 
   const getFilteredTopics = () => {
-    const topics = topicsQuery.data ?? {};
     if (!search.trim()) return topics;
     let newTopics: Topics = {};
 
@@ -43,17 +47,19 @@ const TopicsList = (props: TopicsListPropsT) => {
 
   return (
     <Fragment>
-      {topicsQuery.isPending || topicsQuery.isRefetching ? (
-        "loading..."
-      ) : (
+      {Object.keys(filteredTopics).length === 0 && (
+        <>
+          {isPending && <h6>Loading...</h6>}
+          {!isPending && !error?.message && <h6>No Topics.</h6>}
+          {error?.message && <h6>{error.message}</h6>}
+        </>
+      )}
+
+      {Object.keys(filteredTopics).length !== 0 && !isPending && (
         <div className="max-h-[300px] w-full overflow-x-hidden flex flex-col items-center">
           {Object.keys(filteredTopics).map((key) => {
             return <TopicItem key={key} label={key} />;
           })}
-
-          {!Object.keys(filteredTopics).length && (
-            <div className="text-center">No Topics</div>
-          )}
         </div>
       )}
     </Fragment>
